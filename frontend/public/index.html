@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who's the Stronger!</title>
+<link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+
+<div class="notification" id="notification"></div>
+
+<!-- ========== HOME ========== -->
+<div class="screen active" id="home-screen">
+  <div class="home-content">
+    <div class="game-title">Who's the<br>Stronger!</div>
+    <div class="game-subtitle">⚡ Team Battle Quiz ⚡</div>
+    <div class="rope-divider"><div class="rope-line"></div><div class="rope-knot"></div><div class="rope-line"></div></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="App.showScreen('setup-screen')">🏆 Démarrer une Partie</button>
+      <button class="btn btn-ghost" onclick="App.showScreen('login-screen')">🔐 Accès Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SETUP ========== -->
+<div class="screen" id="setup-screen">
+  <div style="position:fixed;top:20px;left:20px;z-index:10"><button class="btn btn-ghost btn-sm" onclick="App.showScreen('home-screen')">← Retour</button></div>
+  <div class="card">
+    <div class="card-title">⚙️ Configuration</div>
+    <div style="display:flex;flex-direction:column;gap:18px;margin-bottom:28px;">
+      <div><label class="team-label red">🔴 Équipe Rouge</label><input type="text" class="team-input" id="team1-name" placeholder="Ex: Les Lions" maxlength="20"></div>
+      <div><label class="team-label blue">🔵 Équipe Bleue</label><input type="text" class="team-input" id="team2-name" placeholder="Ex: Les Aigles" maxlength="20"></div>
+    </div>
+    <label class="field-label">📋 Choisir une Compétition</label>
+    <select class="form-select-lg" id="competition-select" style="margin-bottom:28px"><option value="">-- Sélectionner --</option></select>
+    <button class="btn btn-primary" style="width:100%" onclick="Game.start()">🚀 Lancer la Partie !</button>
+  </div>
+</div>
+
+<!-- ========== LOGIN ========== -->
+<div class="screen" id="login-screen">
+  <div style="position:fixed;top:20px;left:20px;z-index:10"><button class="btn btn-ghost btn-sm" onclick="App.showScreen('home-screen')">← Retour</button></div>
+  <div class="card">
+    <div class="card-title">🔐 Admin Access</div>
+    <div class="form-group"><label class="form-label">Mot de passe</label>
+      <input type="password" class="form-input" id="admin-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')Admin.login()">
+    </div>
+    <button class="btn btn-gold" style="width:100%;margin-top:8px" onclick="Admin.login()">Connexion</button>
+    <p style="text-align:center;margin-top:16px;font-size:.8rem;opacity:.4">Mot de passe défini dans le fichier <code>.env</code></p>
+  </div>
+</div>
+
+<!-- ========== GAME ========== -->
+<div class="screen" id="game-screen">
+  <div class="game-header">
+    <div class="team-score-display left">
+      <div class="team-name-display red" id="game-t1-name">Équipe 1</div>
+      <div class="score-number red" id="score-t1">0</div>
+    </div>
+    <div class="game-center-info">
+      <div class="timer-display" id="timer-display">⏱ --</div>
+      <div class="question-counter" id="q-counter">Q --/--</div>
+    </div>
+    <div class="team-score-display right">
+      <div class="team-name-display blue" id="game-t2-name">Équipe 2</div>
+      <div class="score-number blue" id="score-t2">0</div>
+    </div>
+  </div>
+  <div class="arena">
+    <div class="team-figures">
+      <div class="figure-group left"><span class="figure">🧍</span><span class="figure" style="animation-delay:.2s">🧍</span><span class="figure" style="animation-delay:.4s">🧍</span></div>
+      <div class="figure-group right"><span class="figure" style="animation-delay:.1s">🧍</span><span class="figure" style="animation-delay:.3s">🧍</span><span class="figure" style="animation-delay:.5s">🧍</span></div>
+    </div>
+    <div class="rope-arena"><div class="rope-track"><div class="rope-center-mark"></div><div class="rope-flag" id="rope-flag" style="left:50%"></div></div></div>
+    <div class="questions-grid">
+      <div class="question-panel red-panel" id="panel-t1">
+        <div class="answered-overlay" id="overlay-1"><div class="overlay-icon">⏳</div><div class="overlay-text">En attente…</div></div>
+        <div class="panel-team-tag red">🔴 <span id="ptag1"></span></div>
+        <div id="qbody1"></div>
+        <div class="answers-grid" id="answers-1"></div>
+      </div>
+      <div class="question-panel blue-panel" id="panel-t2">
+        <div class="answered-overlay" id="overlay-2"><div class="overlay-icon">⏳</div><div class="overlay-text">En attente…</div></div>
+        <div class="panel-team-tag blue">🔵 <span id="ptag2"></span></div>
+        <div id="qbody2"></div>
+        <div class="answers-grid" id="answers-2"></div>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="Game.confirmEnd()" style="margin-top:4px">⏹ Terminer</button>
+  </div>
+</div>
+
+<!-- Round Reveal -->
+<div class="round-reveal" id="round-reveal">
+  <div class="reveal-title">📊 Résultat du Round</div>
+  <div class="reveal-results" id="reveal-results"></div>
+  <div class="reveal-correct-ans" id="reveal-correct-ans"></div>
+  <button class="btn btn-gold btn-sm" onclick="Game.continueRound()" id="reveal-next-btn">Suivant ➜</button>
+</div>
+
+<!-- ========== RESULT ========== -->
+<div class="screen" id="result-screen">
+  <div class="confetti-container" id="confetti-container"></div>
+  <div class="result-card">
+    <div class="winner-trophy" id="result-trophy">🏆</div>
+    <div class="winner-title" id="result-title">VAINQUEUR !</div>
+    <div class="winner-name" id="result-winner">---</div>
+    <div class="score-summary">
+      <div class="score-item"><div class="score-item-name" id="res-name1">Équipe 1</div><div class="score-item-value red" id="res-score1">0</div></div>
+      <div class="score-item"><div style="font-size:1.5rem;font-weight:900;opacity:.3;padding-top:8px">VS</div></div>
+      <div class="score-item"><div class="score-item-name" id="res-name2">Équipe 2</div><div class="score-item-value blue" id="res-score2">0</div></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="App.showScreen('setup-screen')">🔄 Rejouer</button>
+      <button class="btn btn-ghost" onclick="App.showScreen('home-screen')">🏠 Accueil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADMIN ========== -->
+<div class="screen" id="admin-screen">
+  <div class="admin-header">
+    <div class="admin-title">⚙️ Administration</div>
+    <button class="btn btn-ghost btn-sm" onclick="Admin.logout()">🚪 Déconnexion</button>
+  </div>
+  <div class="admin-tabs">
+    <button class="admin-tab active" id="atab-questions" onclick="Admin.switchTab('questions')">❓ Questions</button>
+    <button class="admin-tab" id="atab-competitions" onclick="Admin.switchTab('competitions')">🏆 Compétitions</button>
+    <button class="admin-tab" id="atab-history" onclick="Admin.switchTab('history')">📈 Historique</button>
+  </div>
+  <div class="admin-content">
+
+    <!-- Questions -->
+    <div class="admin-panel active" id="tab-questions">
+      <div class="section-header"><div class="section-title">Questions</div><button class="btn btn-success btn-sm" onclick="QModal.open()">+ Ajouter</button></div>
+      <table class="data-table"><thead><tr><th>Aperçu</th><th>Type Q.</th><th>Texte</th><th>Type Rép.</th><th>Bonne réponse</th><th>Compétition</th><th>Actions</th></tr></thead><tbody id="q-tbody"></tbody></table>
+      <div class="empty-state" id="q-empty" style="display:none"><div class="icon">❓</div><div>Aucune question. Commencez par en ajouter !</div></div>
+    </div>
+
+    <!-- Competitions -->
+    <div class="admin-panel" id="tab-competitions">
+      <div class="section-header"><div class="section-title">Compétitions</div><button class="btn btn-success btn-sm" onclick="CModal.open()">+ Créer</button></div>
+      <table class="data-table"><thead><tr><th>Nom</th><th>Description</th><th>Questions</th><th>Créée le</th><th>Actions</th></tr></thead><tbody id="c-tbody"></tbody></table>
+      <div class="empty-state" id="c-empty" style="display:none"><div class="icon">🏆</div><div>Aucune compétition.</div></div>
+    </div>
+
+    <!-- History -->
+    <div class="admin-panel" id="tab-history">
+      <div class="section-header"><div class="section-title">Historique des Parties</div></div>
+      <table class="data-table"><thead><tr><th>Date</th><th>Compétition</th><th>Équipe Rouge</th><th>Score</th><th>Équipe Bleue</th><th>Résultat</th></tr></thead><tbody id="h-tbody"></tbody></table>
+      <div class="empty-state" id="h-empty" style="display:none"><div class="icon">📈</div><div>Aucune partie jouée.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: Question ========== -->
+<div class="modal-overlay" id="question-modal">
+  <div class="modal">
+    <div class="modal-title" id="qmodal-title">Ajouter une Question</div>
+    <input type="hidden" id="q-edit-id">
+
+    <div class="form-group">
+      <label class="form-label">🎯 Type de contenu de la question</label>
+      <div class="type-pills" id="qtype-pills">
+        <button class="type-pill active" data-qtype="text" onclick="QModal.setQType(this)">📝 Texte</button>
+        <button class="type-pill" data-qtype="image" onclick="QModal.setQType(this)">🖼️ Image</button>
+        <button class="type-pill" data-qtype="video" onclick="QModal.setQType(this)">🎬 Vidéo</button>
+        <button class="type-pill" data-qtype="audio" onclick="QModal.setQType(this)">🎵 Audio</button>
+        <button class="type-pill" data-qtype="mixed" onclick="QModal.setQType(this)">🔀 Texte + Média</button>
+      </div>
+    </div>
+
+    <div class="form-group" id="qtext-group">
+      <label class="form-label">Texte de la question</label>
+      <textarea class="form-textarea" id="q-text" placeholder="Ex: Quel est ce monument ?"></textarea>
+    </div>
+
+    <div class="form-group" id="qmedia-group" style="display:none">
+      <label class="form-label">Média</label>
+      <div class="media-drop" id="q-media-drop">
+        <input type="file" id="q-media-file" accept="image/*,video/*,audio/*" onchange="QModal.onMediaFile(this)" onclick="event.stopPropagation()">
+        <div class="drop-icon" id="q-drop-icon">📁</div>
+        <div class="drop-label">Cliquer pour uploader (image / vidéo / audio)</div>
+      </div>
+      <input type="text" class="form-input" id="q-media-url" placeholder="— ou coller une URL directe —" style="margin-top:8px" oninput="QModal.onMediaUrl(this.value)">
+      <div class="media-preview-wrap" id="q-media-preview"></div>
+    </div>
+
+    <div class="form-divider"></div>
+
+    <div class="form-group">
+      <label class="form-label">💬 Type des réponses</label>
+      <div class="type-pills" id="atype-pills">
+        <button class="type-pill active" data-atype="text" onclick="QModal.setAType(this)">📝 Texte</button>
+        <button class="type-pill" data-atype="image" onclick="QModal.setAType(this)">🖼️ Image</button>
+        <button class="type-pill" data-atype="mixed" onclick="QModal.setAType(this)">🔀 Texte + Image</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Réponses (4) — cliquez ✅ pour marquer la bonne</label>
+      <div class="ans-grid" id="ans-grid"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Compétition</label>
+      <select class="form-select" id="q-competition"><option value="">-- Aucune --</option></select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="App.closeModal('question-modal')">Annuler</button>
+      <button class="btn btn-success btn-sm" id="q-save-btn" onclick="QModal.save()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: Competition ========== -->
+<div class="modal-overlay" id="competition-modal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title" id="cmodal-title">Créer une Compétition</div>
+    <input type="hidden" id="c-edit-id">
+    <div class="form-group"><label class="form-label">Nom</label><input type="text" class="form-input" id="comp-name" placeholder="Ex: Mathématiques CM2"></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="comp-desc" placeholder="Description optionnelle..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="App.closeModal('competition-modal')">Annuler</button>
+      <button class="btn btn-success btn-sm" id="c-save-btn" onclick="CModal.save()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/game.js"></script>
+<script src="/js/admin.js"></script>
+<script>App.init();</script>
+</body>
+</html>
