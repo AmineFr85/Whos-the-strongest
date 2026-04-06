@@ -12,28 +12,24 @@ const gameRoutes         = require('./routes/games');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-// Ajouté — Railway utilise un reverse proxy HTTPS
+
+// ── Trust Railway's reverse proxy (needed for secure cookies over HTTPS) ──
 app.set('trust proxy', 1);
 
-// Cookie corrigé pour fonctionner sur Railway
-cookie: {
-  secure:   true,           // HTTPS obligatoire en prod ✅
-  httpOnly: true,           // Sécurité renforcée ✅
-  sameSite: 'none',         // Autorise les cookies cross-origin ✅
-  maxAge:   8 * 60 * 60 * 1000,
-}
 // ── Middleware ─────────────────────────────────────────────
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'default_secret',
+  secret: process.env.SESSION_SECRET || 'default_secret_change_me',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 8 * 60 * 60 * 1000, // 8h
+    secure:   process.env.NODE_ENV === 'production', // HTTPS uniquement en prod
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge:   8 * 60 * 60 * 1000, // 8 heures
   },
 }));
 
