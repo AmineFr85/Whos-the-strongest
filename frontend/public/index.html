@@ -3,55 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Who's the Strongest!</title>
+<title>Who's the Stronger!</title>
 <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
-
 <div class="notification" id="notification"></div>
 
-<!-- ========== HOME ========== -->
+<!-- ══════════════ HOME ══════════════ -->
 <div class="screen active" id="home-screen">
   <div class="home-content">
-    <div class="game-title">Who's the<br>Strongest!</div>
-    <div class="game-subtitle">⚡ Team Battle Quiz ⚡</div>
-    <div class="rope-divider"><div class="rope-line"></div><div class="rope-knot"></div><div class="rope-line"></div></div>
-    <div class="btn-group">
-      <button class="btn btn-primary" onclick="App.showScreen('setup-screen')">🏆 Démarrer une Partie</button>
-      <button class="btn btn-ghost" onclick="App.showScreen('login-screen')">🔐 Accès Admin</button>
+    <div class="game-title">Who's the<br>Stronger!</div>
+    <div class="game-subtitle">⚡ Plateforme Quiz & Examen ⚡</div>
+    <div class="home-modes">
+      <div class="mode-card game-mode" onclick="App.showScreen('setup-screen')">
+        <div class="mode-badge">2 équipes</div>
+        <div class="mode-icon">🏆</div>
+        <div class="mode-title red">Jeu Équipe</div>
+        <div class="mode-desc">Compétition en temps réel entre deux équipes. Questions simultanées, corde animée, score en direct.</div>
+      </div>
+      <div class="mode-card exam-mode" onclick="App.showScreen('exam-entry-screen')">
+        <div class="mode-badge">Individuel</div>
+        <div class="mode-icon">📝</div>
+        <div class="mode-title green">Espace Examen</div>
+        <div class="mode-desc">Examen individuel chronométré. Score détaillé, compte-rendu envoyé au professeur par email.</div>
+      </div>
     </div>
+    <div class="home-admin-link" onclick="App.showScreen('login-screen')">🔐 Accès Administration</div>
   </div>
 </div>
 
-<!-- ========== SETUP ========== -->
+<!-- ══════════════ SETUP (game) ══════════════ -->
 <div class="screen" id="setup-screen">
   <div style="position:fixed;top:20px;left:20px;z-index:10"><button class="btn btn-ghost btn-sm" onclick="App.showScreen('home-screen')">← Retour</button></div>
-  <div class="card">
+  <div class="card" style="max-width:500px;margin:auto">
     <div class="card-title">⚙️ Configuration</div>
-    <div style="display:flex;flex-direction:column;gap:18px;margin-bottom:28px;">
+    <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">
       <div><label class="team-label red">🔴 Équipe Rouge</label><input type="text" class="team-input" id="team1-name" placeholder="Ex: Les Lions" maxlength="20"></div>
       <div><label class="team-label blue">🔵 Équipe Bleue</label><input type="text" class="team-input" id="team2-name" placeholder="Ex: Les Aigles" maxlength="20"></div>
     </div>
-    <label class="field-label">📋 Choisir une Compétition</label>
-    <select class="form-select-lg" id="competition-select" style="margin-bottom:28px"><option value="">-- Sélectionner --</option></select>
-    <button class="btn btn-primary" style="width:100%" onclick="Game.start()">🚀 Lancer la Partie !</button>
+    <label class="field-label">📋 Compétition</label>
+    <select class="form-select-lg" id="competition-select" style="margin-bottom:24px"><option value="">-- Sélectionner --</option></select>
+    <button class="btn btn-primary" style="width:100%" id="start-game-btn" onclick="Game.start()">🚀 Lancer la Partie !</button>
   </div>
 </div>
 
-<!-- ========== LOGIN ========== -->
+<!-- ══════════════ LOGIN ══════════════ -->
 <div class="screen" id="login-screen">
   <div style="position:fixed;top:20px;left:20px;z-index:10"><button class="btn btn-ghost btn-sm" onclick="App.showScreen('home-screen')">← Retour</button></div>
-  <div class="card">
+  <div class="card" style="max-width:420px;margin:auto">
     <div class="card-title">🔐 Admin Access</div>
     <div class="form-group"><label class="form-label">Mot de passe</label>
       <input type="password" class="form-input" id="admin-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')Admin.login()">
     </div>
     <button class="btn btn-gold" style="width:100%;margin-top:8px" onclick="Admin.login()">Connexion</button>
-    <p style="text-align:center;margin-top:16px;font-size:.8rem;opacity:.4">Mot de passe défini dans le fichier <code>.env</code></p>
   </div>
 </div>
 
-<!-- ========== GAME ========== -->
+<!-- ══════════════ GAME ══════════════ -->
 <div class="screen" id="game-screen">
   <div class="game-header">
     <div class="team-score-display left">
@@ -77,14 +85,12 @@
       <div class="question-panel red-panel" id="panel-t1">
         <div class="answered-overlay" id="overlay-1"><div class="overlay-icon">⏳</div><div class="overlay-text">En attente…</div></div>
         <div class="panel-team-tag red">🔴 <span id="ptag1"></span></div>
-        <div id="qbody1"></div>
-        <div class="answers-grid" id="answers-1"></div>
+        <div id="qbody1"></div><div class="answers-grid" id="answers-1"></div>
       </div>
       <div class="question-panel blue-panel" id="panel-t2">
         <div class="answered-overlay" id="overlay-2"><div class="overlay-icon">⏳</div><div class="overlay-text">En attente…</div></div>
         <div class="panel-team-tag blue">🔵 <span id="ptag2"></span></div>
-        <div id="qbody2"></div>
-        <div class="answers-grid" id="answers-2"></div>
+        <div id="qbody2"></div><div class="answers-grid" id="answers-2"></div>
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" onclick="Game.confirmEnd()" style="margin-top:4px">⏹ Terminer</button>
@@ -99,7 +105,7 @@
   <button class="btn btn-gold btn-sm" onclick="Game.continueRound()" id="reveal-next-btn">Suivant ➜</button>
 </div>
 
-<!-- ========== RESULT ========== -->
+<!-- ══════════════ GAME RESULT ══════════════ -->
 <div class="screen" id="result-screen">
   <div class="confetti-container" id="confetti-container"></div>
   <div class="result-card">
@@ -118,7 +124,80 @@
   </div>
 </div>
 
-<!-- ========== ADMIN ========== -->
+<!-- ══════════════ EXAM ENTRY ══════════════ -->
+<div class="screen" id="exam-entry-screen">
+  <div style="position:fixed;top:20px;left:20px;z-index:10"><button class="btn btn-ghost btn-sm" onclick="App.showScreen('home-screen')">← Retour</button></div>
+  <div class="exam-card" style="max-width:480px;margin:auto">
+    <div class="exam-card-title">📝 Espace Examen</div>
+    <div class="form-group"><label class="form-label">Votre nom complet *</label><input type="text" class="form-input" id="exam-student-name" placeholder="Ex: Ahmed Ben Ali"></div>
+    <div class="form-group"><label class="form-label">Classe *</label>
+      <select class="form-select" id="exam-class-select"><option value="">-- Sélectionner votre classe --</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Email (pour recevoir vos résultats)</label><input type="email" class="form-input" id="exam-student-email" placeholder="votre@email.com"></div>
+    <div class="form-group"><label class="form-label">Examen *</label>
+      <select class="form-select" id="exam-config-select"><option value="">-- Sélectionner l'examen --</option></select>
+    </div>
+    <div id="exam-config-info" style="display:none;background:rgba(82,183,136,.08);border:1px solid rgba(82,183,136,.2);border-radius:12px;padding:14px;margin-bottom:16px;font-size:.88rem;line-height:1.7;"></div>
+    <button class="btn btn-exam" style="width:100%" id="start-exam-btn" onclick="Exam.start()">🚀 Commencer l'Examen</button>
+  </div>
+</div>
+
+<!-- ══════════════ EXAM TAKING ══════════════ -->
+<div class="screen" id="exam-screen">
+  <div class="exam-header">
+    <div class="exam-header-left">
+      <div class="exam-title-display" id="exam-title-display">Examen</div>
+      <div class="exam-student-display" id="exam-student-display"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="exam-timer" id="exam-timer">⏱ --:--</div>
+      <div id="exam-q-progress" style="font-size:.75rem;opacity:.5"></div>
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="Exam.confirmSubmit()">✅ Terminer</button>
+  </div>
+  <div class="exam-progress-bar"><div class="exam-progress-fill" id="exam-progress-fill" style="width:0%"></div></div>
+  <div class="exam-body">
+    <div class="exam-question-card" id="exam-question-card">
+      <div class="exam-q-header">
+        <span class="exam-q-number" id="exam-q-number">Q 1</span>
+        <span class="exam-q-type-badge" id="exam-q-type-badge">QCM</span>
+        <span class="exam-q-score" id="exam-q-score">1 pt</span>
+      </div>
+      <div class="exam-question-text" id="exam-question-text"></div>
+      <div id="exam-q-media"></div>
+      <div id="exam-answers-container"></div>
+    </div>
+  </div>
+  <div class="exam-nav">
+    <button class="btn btn-ghost btn-sm" onclick="Exam.prevQ()">← Précédent</button>
+    <div class="exam-q-dots" id="exam-q-dots"></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost btn-sm" id="exam-skip-btn" onclick="Exam.skipQ()" style="display:none">⏭ Passer</button>
+      <button class="btn btn-exam btn-sm" onclick="Exam.nextQ()">Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ EXAM RESULT ══════════════ -->
+<div class="screen" id="exam-result-screen">
+  <div class="confetti-container" id="exam-confetti"></div>
+  <div class="exam-result-card">
+    <div class="exam-score-ring" id="exam-score-ring">
+      <div class="exam-score-pct" id="exam-score-pct">0%</div>
+      <div class="exam-score-label">Score</div>
+    </div>
+    <div class="exam-result-status" id="exam-result-status">--</div>
+    <div style="font-size:1rem;opacity:.6;margin-bottom:6px" id="exam-score-detail"></div>
+    <div style="font-size:.85rem;opacity:.5;margin-bottom:24px" id="exam-email-sent"></div>
+    <div class="exam-answers-review" id="exam-answers-review"></div>
+    <div class="btn-group" style="margin-top:24px">
+      <button class="btn btn-exam" onclick="App.showScreen('exam-entry-screen')">🔄 Nouvel examen</button>
+      <button class="btn btn-ghost" onclick="App.showScreen('home-screen')">🏠 Accueil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN ══════════════ -->
 <div class="screen" id="admin-screen">
   <div class="admin-header">
     <div class="admin-title">⚙️ Administration</div>
@@ -127,87 +206,129 @@
   <div class="admin-tabs">
     <button class="admin-tab active" id="atab-questions" onclick="Admin.switchTab('questions')">❓ Questions</button>
     <button class="admin-tab" id="atab-competitions" onclick="Admin.switchTab('competitions')">🏆 Compétitions</button>
-    <button class="admin-tab" id="atab-history" onclick="Admin.switchTab('history')">📈 Historique</button>
+    <button class="admin-tab" id="atab-classes" onclick="Admin.switchTab('classes')">🏫 Classes</button>
+    <button class="admin-tab" id="atab-exams" onclick="Admin.switchTab('exams')">📝 Examens Config</button>
+    <button class="admin-tab" id="atab-results" onclick="Admin.switchTab('results')">📈 Résultats</button>
+    <button class="admin-tab" id="atab-email" onclick="Admin.switchTab('email')">📧 Email SMTP</button>
+    <button class="admin-tab" id="atab-history" onclick="Admin.switchTab('history')">🎮 Historique Jeu</button>
   </div>
   <div class="admin-content">
 
-    <!-- Questions -->
     <div class="admin-panel active" id="tab-questions">
       <div class="section-header"><div class="section-title">Questions</div><button class="btn btn-success btn-sm" onclick="QModal.open()">+ Ajouter</button></div>
-      <table class="data-table"><thead><tr><th>Aperçu</th><th>Type Q.</th><th>Texte</th><th>Type Rép.</th><th>Bonne réponse</th><th>Compétition</th><th>Actions</th></tr></thead><tbody id="q-tbody"></tbody></table>
-      <div class="empty-state" id="q-empty" style="display:none"><div class="icon">❓</div><div>Aucune question. Commencez par en ajouter !</div></div>
+      <table class="data-table"><thead><tr><th>Aperçu</th><th>Type Q.</th><th>Texte</th><th>Score max</th><th>Compétition</th><th>Actions</th></tr></thead><tbody id="q-tbody"></tbody></table>
+      <div class="empty-state" id="q-empty" style="display:none"><div class="icon">❓</div><div>Aucune question.</div></div>
     </div>
 
-    <!-- Competitions -->
     <div class="admin-panel" id="tab-competitions">
       <div class="section-header"><div class="section-title">Compétitions</div><button class="btn btn-success btn-sm" onclick="CModal.open()">+ Créer</button></div>
-      <table class="data-table"><thead><tr><th>Nom</th><th>Description</th><th>Questions</th><th>Créée le</th><th>Actions</th></tr></thead><tbody id="c-tbody"></tbody></table>
+      <table class="data-table"><thead><tr><th>Nom</th><th>Description</th><th>Questions</th><th>Actions</th></tr></thead><tbody id="c-tbody"></tbody></table>
       <div class="empty-state" id="c-empty" style="display:none"><div class="icon">🏆</div><div>Aucune compétition.</div></div>
     </div>
 
-    <!-- History -->
+    <div class="admin-panel" id="tab-classes">
+      <div class="section-header"><div class="section-title">Classes</div><button class="btn btn-success btn-sm" onclick="ClassModal.open()">+ Ajouter</button></div>
+      <table class="data-table"><thead><tr><th>Nom de la classe</th><th>Actions</th></tr></thead><tbody id="cls-tbody"></tbody></table>
+      <div class="empty-state" id="cls-empty" style="display:none"><div class="icon">🏫</div><div>Aucune classe.</div></div>
+    </div>
+
+    <div class="admin-panel" id="tab-exams">
+      <div class="section-header"><div class="section-title">Configuration des Examens</div><button class="btn btn-success btn-sm" onclick="ExamConfigModal.open()">+ Créer</button></div>
+      <table class="data-table"><thead><tr><th>Nom</th><th>Compétition</th><th>Durée</th><th>Options</th><th>Score seuil</th><th>Actions</th></tr></thead><tbody id="ec-tbody"></tbody></table>
+      <div class="empty-state" id="ec-empty" style="display:none"><div class="icon">📝</div><div>Aucun examen configuré.</div></div>
+    </div>
+
+    <div class="admin-panel" id="tab-results">
+      <div class="section-header"><div class="section-title">Résultats des Examens</div></div>
+      <table class="data-table"><thead><tr><th>Date</th><th>Examen</th><th>Élève</th><th>Classe</th><th>Score</th><th>%</th><th>Résultat</th><th>Détail</th></tr></thead><tbody id="res-tbody"></tbody></table>
+      <div class="empty-state" id="res-empty" style="display:none"><div class="icon">📈</div><div>Aucun résultat d'examen.</div></div>
+    </div>
+
+    <div class="admin-panel" id="tab-email">
+      <div class="section-title" style="margin-bottom:20px">Configuration Email SMTP</div>
+      <div style="max-width:500px">
+        <div class="form-group"><label class="form-label">Serveur SMTP</label><input type="text" class="form-input" id="smtp-host" placeholder="smtp.gmail.com | smtp.office365.com"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Port</label><input type="number" class="form-input" id="smtp-port" value="587"></div>
+          <div class="form-group"><label class="form-label">Sécurité</label><select class="form-select" id="smtp-security"><option value="587">STARTTLS (587)</option><option value="465">SSL (465)</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Utilisateur (email d'envoi)</label><input type="email" class="form-input" id="smtp-user" placeholder="votre@email.com"></div>
+        <div class="form-group"><label class="form-label">Mot de passe (ou App Password)</label><input type="password" class="form-input" id="smtp-pass" placeholder="••••••••••••"></div>
+        <div class="form-group"><label class="form-label">Email affiché (From)</label><input type="email" class="form-input" id="smtp-from" placeholder="noreply@votreecole.com"></div>
+        <div class="form-group"><label class="form-label">📬 Email du Professeur (destinataire des rapports)</label><input type="email" class="form-input" id="prof-email" placeholder="prof@ecole.com"></div>
+        <div style="display:flex;gap:12px;margin-top:16px">
+          <button class="btn btn-success btn-sm" onclick="Admin.saveEmailConfig()">💾 Enregistrer</button>
+          <button class="btn btn-ghost btn-sm" onclick="Admin.testEmail()">🔌 Tester connexion</button>
+        </div>
+        <div style="margin-top:16px;font-size:.8rem;opacity:.5;line-height:1.7">
+          💡 <strong>Gmail :</strong> Activez "Mots de passe d'application" dans votre compte Google.<br>
+          💡 <strong>Outlook :</strong> smtp.office365.com, port 587.<br>
+          💡 <strong>Yahoo :</strong> smtp.mail.yahoo.com, port 587.
+        </div>
+      </div>
+    </div>
+
     <div class="admin-panel" id="tab-history">
-      <div class="section-header"><div class="section-title">Historique des Parties</div></div>
+      <div class="section-header"><div class="section-title">Historique Parties</div></div>
       <table class="data-table"><thead><tr><th>Date</th><th>Compétition</th><th>Équipe Rouge</th><th>Score</th><th>Équipe Bleue</th><th>Résultat</th></tr></thead><tbody id="h-tbody"></tbody></table>
-      <div class="empty-state" id="h-empty" style="display:none"><div class="icon">📈</div><div>Aucune partie jouée.</div></div>
+      <div class="empty-state" id="h-empty" style="display:none"><div class="icon">🎮</div><div>Aucune partie.</div></div>
     </div>
   </div>
 </div>
 
-<!-- ========== MODAL: Question ========== -->
+<!-- ══ MODAL: Question ══ -->
 <div class="modal-overlay" id="question-modal">
   <div class="modal">
     <div class="modal-title" id="qmodal-title">Ajouter une Question</div>
     <input type="hidden" id="q-edit-id">
-
     <div class="form-group">
-      <label class="form-label">🎯 Type de contenu de la question</label>
+      <label class="form-label">🎯 Type de question</label>
       <div class="type-pills" id="qtype-pills">
-        <button class="type-pill active" data-qtype="text" onclick="QModal.setQType(this)">📝 Texte</button>
-        <button class="type-pill" data-qtype="image" onclick="QModal.setQType(this)">🖼️ Image</button>
-        <button class="type-pill" data-qtype="video" onclick="QModal.setQType(this)">🎬 Vidéo</button>
-        <button class="type-pill" data-qtype="audio" onclick="QModal.setQType(this)">🎵 Audio</button>
-        <button class="type-pill" data-qtype="mixed" onclick="QModal.setQType(this)">🔀 Texte + Média</button>
+        <button class="type-pill active" data-qtype="qcm" onclick="QModal.setQType(this)">🔘 QCM</button>
+        <button class="type-pill" data-qtype="truefalse" onclick="QModal.setQType(this)">✅ Vrai/Faux</button>
+        <button class="type-pill" data-qtype="order" onclick="QModal.setQType(this)">🔢 Mettre en ordre</button>
+        <button class="type-pill" data-qtype="match" onclick="QModal.setQType(this)">🔗 Relier</button>
+        <button class="type-pill" data-qtype="fill" onclick="QModal.setQType(this)">✏️ Compléter</button>
+        <button class="type-pill" data-qtype="open" onclick="QModal.setQType(this)">📝 Réponse libre</button>
       </div>
     </div>
-
-    <div class="form-group" id="qtext-group">
-      <label class="form-label">Texte de la question</label>
-      <textarea class="form-textarea" id="q-text" placeholder="Ex: Quel est ce monument ?"></textarea>
+    <div class="form-group" id="q-media-type-group">
+      <label class="form-label">🖼️ Média question</label>
+      <div class="type-pills" id="qmedia-pills">
+        <button class="type-pill active" data-qmedia="none" onclick="QModal.setMediaType(this)">Aucun</button>
+        <button class="type-pill" data-qmedia="image" onclick="QModal.setMediaType(this)">🖼️ Image</button>
+        <button class="type-pill" data-qmedia="video" onclick="QModal.setMediaType(this)">🎬 Vidéo</button>
+        <button class="type-pill" data-qmedia="audio" onclick="QModal.setMediaType(this)">🎵 Audio</button>
+      </div>
     </div>
-
+    <div class="form-group"><label class="form-label">Texte de la question</label>
+      <textarea class="form-textarea" id="q-text" placeholder="Rédigez votre question ici..." rows="3"></textarea>
+    </div>
     <div class="form-group" id="qmedia-group" style="display:none">
-      <label class="form-label">Média</label>
-      <div class="media-drop" id="q-media-drop">
+      <div class="media-drop">
         <input type="file" id="q-media-file" accept="image/*,video/*,audio/*" onchange="QModal.onMediaFile(this)" onclick="event.stopPropagation()">
         <div class="drop-icon" id="q-drop-icon">📁</div>
-        <div class="drop-label">Cliquer pour uploader (image / vidéo / audio)</div>
+        <div class="drop-label">Cliquer pour uploader</div>
       </div>
-      <input type="text" class="form-input" id="q-media-url" placeholder="— ou coller une URL directe —" style="margin-top:8px" oninput="QModal.onMediaUrl(this.value)">
+      <input type="text" class="form-input" id="q-media-url" placeholder="— ou URL directe —" style="margin-top:8px" oninput="QModal.onMediaUrl(this.value)">
       <div class="media-preview-wrap" id="q-media-preview"></div>
     </div>
-
-    <div class="form-divider"></div>
-
-    <div class="form-group">
-      <label class="form-label">💬 Type des réponses</label>
-      <div class="type-pills" id="atype-pills">
-        <button class="type-pill active" data-atype="text" onclick="QModal.setAType(this)">📝 Texte</button>
-        <button class="type-pill" data-atype="image" onclick="QModal.setAType(this)">🖼️ Image</button>
-        <button class="type-pill" data-atype="mixed" onclick="QModal.setAType(this)">🔀 Texte + Image</button>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Score maximum</label><input type="number" class="form-input" id="q-max-score" value="1" min="0.5" step="0.5"></div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <label class="form-check"><input type="checkbox" id="q-partial-scoring"> Score partiel autorisé</label>
       </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Réponses (4) — cliquez ✅ pour marquer la bonne</label>
-      <div class="ans-grid" id="ans-grid"></div>
+    <div class="form-group"><label class="form-label">Feedback global (affiché après réponse)</label>
+      <input type="text" class="form-input" id="q-feedback" placeholder="Ex: Bonne chance la prochaine fois !">
     </div>
-
-    <div class="form-group">
+    <div class="form-divider"></div>
+    <!-- Dynamic answer builder injected here -->
+    <div id="ans-builder-container"></div>
+    <div class="form-group" style="margin-top:12px">
       <label class="form-label">Compétition</label>
       <select class="form-select" id="q-competition"><option value="">-- Aucune --</option></select>
     </div>
-
     <div class="modal-actions">
       <button class="btn btn-ghost btn-sm" onclick="App.closeModal('question-modal')">Annuler</button>
       <button class="btn btn-success btn-sm" id="q-save-btn" onclick="QModal.save()">💾 Enregistrer</button>
@@ -215,13 +336,13 @@
   </div>
 </div>
 
-<!-- ========== MODAL: Competition ========== -->
+<!-- ══ MODAL: Competition ══ -->
 <div class="modal-overlay" id="competition-modal">
   <div class="modal" style="max-width:460px">
     <div class="modal-title" id="cmodal-title">Créer une Compétition</div>
     <input type="hidden" id="c-edit-id">
-    <div class="form-group"><label class="form-label">Nom</label><input type="text" class="form-input" id="comp-name" placeholder="Ex: Mathématiques CM2"></div>
-    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="comp-desc" placeholder="Description optionnelle..."></textarea></div>
+    <div class="form-group"><label class="form-label">Nom</label><input type="text" class="form-input" id="comp-name"></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="comp-desc"></textarea></div>
     <div class="modal-actions">
       <button class="btn btn-ghost btn-sm" onclick="App.closeModal('competition-modal')">Annuler</button>
       <button class="btn btn-success btn-sm" id="c-save-btn" onclick="CModal.save()">💾 Enregistrer</button>
@@ -229,9 +350,63 @@
   </div>
 </div>
 
+<!-- ══ MODAL: Class ══ -->
+<div class="modal-overlay" id="class-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title" id="clsmodal-title">Ajouter une Classe</div>
+    <input type="hidden" id="cls-edit-id">
+    <div class="form-group"><label class="form-label">Nom de la classe</label><input type="text" class="form-input" id="cls-name" placeholder="Ex: 3ème SI"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="App.closeModal('class-modal')">Annuler</button>
+      <button class="btn btn-success btn-sm" id="cls-save-btn" onclick="ClassModal.save()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Exam Config ══ -->
+<div class="modal-overlay" id="exam-config-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title" id="ecmodal-title">Configurer un Examen</div>
+    <input type="hidden" id="ec-edit-id">
+    <div class="form-group"><label class="form-label">Nom de l'examen</label><input type="text" class="form-input" id="ec-name" placeholder="Ex: Contrôle Maths — Janvier 2025"></div>
+    <div class="form-group"><label class="form-label">Compétition (banque de questions)</label>
+      <select class="form-select" id="ec-competition"><option value="">-- Sélectionner --</option></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">⏱ Durée (minutes)</label><input type="number" class="form-input" id="ec-duration" value="30" min="1"></div>
+      <div class="form-group"><label class="form-label">🎯 Score de réussite (%)</label><input type="number" class="form-input" id="ec-pass-score" value="50" min="0" max="100"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tentatives max</label><input type="number" class="form-input" id="ec-max-attempts" value="1" min="1"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <label class="form-check"><input type="checkbox" id="ec-shuffle-q"> 🔀 Mélanger les questions</label>
+      <label class="form-check"><input type="checkbox" id="ec-shuffle-a"> 🔀 Mélanger les réponses</label>
+      <label class="form-check"><input type="checkbox" id="ec-allow-retry"> 🔄 Autoriser le rattrapage</label>
+      <label class="form-check"><input type="checkbox" id="ec-allow-skip" checked> ⏭ Autoriser de passer une question</label>
+      <label class="form-check"><input type="checkbox" id="ec-show-feedback" checked> 💬 Afficher le feedback</label>
+      <label class="form-check"><input type="checkbox" id="ec-show-score" checked> 📊 Afficher le score final</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="App.closeModal('exam-config-modal')">Annuler</button>
+      <button class="btn btn-success btn-sm" id="ec-save-btn" onclick="ExamConfigModal.save()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Exam detail ══ -->
+<div class="modal-overlay" id="exam-detail-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">📋 Détail de la Copie</div>
+    <div id="exam-detail-content"></div>
+    <div class="modal-actions"><button class="btn btn-ghost btn-sm" onclick="App.closeModal('exam-detail-modal')">Fermer</button></div>
+  </div>
+</div>
+
 <script src="/js/api.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/game.js"></script>
+<script src="/js/exam.js"></script>
 <script src="/js/admin.js"></script>
 <script>App.init();</script>
 </body>
