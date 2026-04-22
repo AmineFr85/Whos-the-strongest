@@ -492,16 +492,22 @@ router.post('/exams/:sid/submit', async (req, res) => {
       [Math.round(totalScore*100)/100, percentage, passed, JSON.stringify(scoredAnswers), req.params.sid]);
 
     // Send email to prof (async, don't block response)
-    try {
-      const { rows:[updatedSession] } = await pool.query(`
-        SELECT es.*, cl.name AS class_name FROM exam_sessions es
-        LEFT JOIN classes cl ON cl.id=es.class_id WHERE es.id=$1`,[req.params.sid]);
-      updatedSession.answers_json = scoredAnswers;
-      const { rows: allQ } = await pool.query('SELECT id,text,max_score FROM questions WHERE id=ANY($1)',
-        [scoredAnswers.map(a=>a.question_id)]);
-      const { rows:[examCfg] } = await pool.query('SELECT name FROM exam_configs WHERE id=$1',[session.exam_config_id]);
-      sendExamReport(updatedSession, examCfg?.name||'Examen', allQ).catch(()=>{});
-    } catch(_) {}
+    // Send email to prof (async, don't block response)
+try {
+  const { rows:[updatedSession] } = await pool.query(`
+    SELECT es.*, cl.name AS class_name FROM exam_sessions es
+    LEFT JOIN classes cl ON cl.id=es.class_id WHERE es.id=$1`,[req.params.sid]);
+  updatedSession.answers_json = scoredAnswers;
+  const { rows: allQ } = await pool.query('SELECT id,text,max_score FROM questions WHERE id=ANY($1)',
+    [scoredAnswers.map(a=>a.question_id)]);
+  const { rows:[examCfg] } = await pool.query('SELECT name FROM exam_configs WHERE id=$1',[session.exam_config_id]);
+  console.log('📧 Tentative envoi email pour:', updatedSession.student_name);
+  console.log('📧 Prof email:', await getProfEmail());
+  await sendExamReport(updatedSession, examCfg?.name||'Examen', allQ);
+  console.log('📧 Email envoyé avec succès !');
+} catch(emailErr) {
+  console.error('📧 Erreur email:', emailErr.message);
+}
 
     res.json({
       score: Math.round(totalScore*100)/100,
