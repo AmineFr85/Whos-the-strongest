@@ -15,11 +15,15 @@ async function getTransporter() {
   if (!host || !user || !pass) throw new Error('Configuration SMTP incomplète.');
 
   return nodemailer.createTransport({
-    host, port,
-    secure: port === 465,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false },
-  });
+  host, port,
+  secure: true,
+  auth: { user, pass },
+  tls: { rejectUnauthorized: false },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+});
+  
 }
 
 async function getProfEmail() {
