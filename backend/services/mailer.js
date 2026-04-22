@@ -12,7 +12,7 @@ async function sendExamReport(session, examName, questions) {
   const profEmail = await getProfEmail();
   if (!profEmail) throw new Error('Email du professeur non configuré.');
 
-  const pct    = session.percentage?.toFixed(1) || '0';
+  const pct = parseFloat(session.percentage || 0).toFixed(1);
   const passed = session.passed ? '✅ Réussi' : '❌ Non réussi';
 
   let answersHtml = '';
