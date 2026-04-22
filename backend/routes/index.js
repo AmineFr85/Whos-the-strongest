@@ -5,8 +5,7 @@ const fs       = require('fs');
 const pool     = require('../db/pool');
 const upload   = require('../middleware/upload');
 const { requireAdmin } = require('../middleware/auth');
-const { sendExamReport, testConnection } = require('../services/mailer');
-
+const { sendExamReport, testConnection, getProfEmail } = require('../services/mailer');
 const router = express.Router();
 
 // ═══════════════════════════════════════════════════════
