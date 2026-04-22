@@ -5,7 +5,7 @@ const fs       = require('fs');
 const pool     = require('../db/pool');
 const upload   = require('../middleware/upload');
 const { requireAdmin } = require('../middleware/auth');
-const { sendExamReport, getTransporter } = require('../services/mailer');
+const { sendExamReport, testConnection } = require('../services/mailer');
 
 const router = express.Router();
 
@@ -573,8 +573,7 @@ router.put('/email-config', requireAdmin, async (req, res) => {
 
 router.post('/email-config/test', requireAdmin, async (_req, res) => {
   try {
-    const transporter = await getTransporter();
-    await transporter.verify();
+    await testConnection();
     res.json({ success: true, message: 'Connexion SMTP vérifiée ✅' });
   } catch(e) { res.status(400).json({ error: e.message }); }
 });
