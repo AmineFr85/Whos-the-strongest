@@ -92,8 +92,8 @@ const Exam = {
     document.getElementById('exam-q-type-badge').textContent = typeLabels[q.q_type]||'QCM';
 
     // Question text
-document.getElementById('exam-question-text').textContent = q.text || '';
-document.getElementById('exam-question-text').style.whiteSpace = 'pre-wrap';
+    document.getElementById('exam-question-text').textContent = q.text || '';
+
     // Media
     const mediaEl = document.getElementById('exam-q-media');
     if (q.media_url) {
@@ -212,115 +212,159 @@ document.getElementById('exam-question-text').style.whiteSpace = 'pre-wrap';
     container.appendChild(hint);
   },
 
-  // ── Match (relier) ────────────────────────────────────
+  // ── Match (relier) — with undo + pre-wrap + clear instructions ──
   renderMatch(container, q, ans) {
-    // Build left/right shuffled arrays (right side shuffled visually)
-    const left  = q.answers.map((a,i) => ({ text: a.left_text,  origIdx: i }));
-    const right = q.answers.map((a,i) => ({ text: a.right_text, origIdx: i })).sort(()=>Math.random()-.5);
-    let selectedLeft = -1;
+    const left  = q.answers.map((a, i) => ({ text: a.left_text,  origIdx: i }));
+    const right = q.answers.map((a, i) => ({ text: a.right_text, origIdx: i }));
+    if (!ans._rightOrder) ans._rightOrder = [...right].sort(() => Math.random() - .5);
+    const rightDisplay = ans._rightOrder;
     const pairs = ans.match_pairs.length ? [...ans.match_pairs] : [];
+    let selLeftIdx = -1;
 
-    const wrapper = document.createElement('div');
+    const renderAll = () => {
+      container.innerHTML = '';
 
-    const renderPairs = () => {
-      wrapper.innerHTML = '';
-      // Pairs display
+      // Existing pairs with undo button
       if (pairs.length) {
-        const pairsDiv = document.createElement('div'); pairsDiv.className = 'match-pairs-display';
+        const pairsSection = document.createElement('div');
+        pairsSection.innerHTML = '<div style="font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.5;margin-bottom:8px">✅ Paires reliées — cliquez ✕ pour annuler</div>';
         pairs.forEach((p, pi) => {
-          const leftItem  = left.find(l=>l.origIdx===p.left_idx);
-          const rightItem = right.find(r=>r.origIdx===p.right_idx);
+          const leftItem  = left.find(l => l.origIdx === p.left_idx);
+          const rightItem = right.find(r => r.origIdx === p.right_idx);
           const chip = document.createElement('div'); chip.className = 'match-pair-chip';
-          chip.innerHTML = `<strong>${App.esc(leftItem?.text||'')}</strong> ↔ ${App.esc(rightItem?.text||'')}
-            <span class="match-pair-remove" onclick="this.closest('.match-pair-chip').remove()">✕</span>`;
+          chip.style.whiteSpace = 'pre-wrap';
+          chip.innerHTML = `<span style="color:var(--gold);font-weight:700">${App.esc(leftItem?.text||'')}</span>
+            <span style="opacity:.5;margin:0 8px">↔</span>
+            <span style="color:var(--exam-light);font-weight:700">${App.esc(rightItem?.text||'')}</span>
+            <button class="match-pair-remove" title="Annuler">✕</button>`;
           chip.querySelector('.match-pair-remove').onclick = () => {
-            pairs.splice(pi,1); ans.match_pairs=[...pairs]; renderPairs();
+            pairs.splice(pi, 1); ans.match_pairs = [...pairs]; renderAll();
           };
-          pairsDiv.appendChild(chip);
+          pairsSection.appendChild(chip);
         });
-        wrapper.appendChild(pairsDiv);
+        container.appendChild(pairsSection);
+        const sep = document.createElement('div');
+        sep.style.cssText = 'height:1px;background:rgba(255,255,255,.08);margin:12px 0';
+        container.appendChild(sep);
       }
 
-      // Remaining items to match
-      const usedLeft  = pairs.map(p=>p.left_idx);
-      const usedRight = pairs.map(p=>p.right_idx);
-      const remLeft   = left.filter(l=>!usedLeft.includes(l.origIdx));
-      const remRight  = right.filter(r=>!usedRight.includes(r.origIdx));
+      const usedLeft  = pairs.map(p => p.left_idx);
+      const usedRight = pairs.map(p => p.right_idx);
+      const remLeft   = left.filter(l => !usedLeft.includes(l.origIdx));
+      const remRight  = rightDisplay.filter(r => !usedRight.includes(r.origIdx));
 
-      if (!remLeft.length) { const done=document.createElement('div'); done.style.cssText='text-align:center;padding:16px;color:var(--exam-light);font-weight:700'; done.textContent='✅ Tous les éléments reliés !'; wrapper.appendChild(done); return; }
+      if (!remLeft.length) {
+        const done = document.createElement('div');
+        done.style.cssText = 'text-align:center;padding:16px;color:var(--exam-light);font-weight:700;font-size:1rem';
+        done.textContent = '🎉 Tous les éléments sont reliés !';
+        container.appendChild(done); return;
+      }
+
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:.82rem;background:rgba(82,183,136,.1);border:1px solid rgba(82,183,136,.2);border-radius:8px;padding:10px 14px;margin-bottom:12px;text-align:center';
+      hint.textContent = selLeftIdx >= 0
+        ? `✅ "${left.find(l=>l.origIdx===selLeftIdx)?.text}" sélectionné → Cliquez son correspondant en colonne B`
+        : '👆 Étape 1 : cliquez un élément colonne A  →  Étape 2 : cliquez son correspondant colonne B';
+      container.appendChild(hint);
 
       const grid = document.createElement('div'); grid.className = 'match-container';
-      const leftCol=document.createElement('div'); leftCol.className='match-col';
-      const rightCol=document.createElement('div'); rightCol.className='match-col';
-      leftCol.innerHTML='<div class="match-col-title">Colonne A</div>';
-      rightCol.innerHTML='<div class="match-col-title">Colonne B</div>';
+      const leftCol  = document.createElement('div'); leftCol.className = 'match-col';
+      const rightCol = document.createElement('div'); rightCol.className = 'match-col';
+      leftCol.innerHTML  = '<div class="match-col-title">🅐 Colonne A</div>';
+      rightCol.innerHTML = '<div class="match-col-title">🅑 Colonne B</div>';
 
-      let selLeft = -1;
       remLeft.forEach(l => {
-        const el=document.createElement('div'); el.className='match-item';
-        el.textContent=l.text;
-        el.onclick=()=>{ selLeft=l.origIdx; leftCol.querySelectorAll('.match-item').forEach(x=>x.classList.remove('selected')); el.classList.add('selected'); };
+        const el = document.createElement('div');
+        el.className = 'match-item' + (l.origIdx === selLeftIdx ? ' selected' : '');
+        el.style.whiteSpace = 'pre-wrap';
+        el.textContent = l.text;
+        el.onclick = () => { selLeftIdx = l.origIdx === selLeftIdx ? -1 : l.origIdx; renderAll(); };
         leftCol.appendChild(el);
       });
+
       remRight.forEach(r => {
-        const el=document.createElement('div'); el.className='match-item';
-        el.textContent=r.text;
-        el.onclick=()=>{
-          if (selLeft<0) return App.notify('Sélectionnez d\'abord un élément de gauche !', true);
-          pairs.push({left_idx:selLeft, right_idx:r.origIdx});
-          ans.match_pairs=[...pairs]; selLeft=-1; renderPairs();
+        const el = document.createElement('div');
+        el.className = 'match-item';
+        el.style.whiteSpace = 'pre-wrap';
+        el.textContent = r.text;
+        el.onclick = () => {
+          if (selLeftIdx < 0) { App.notify("Choisissez d'abord un élément de la colonne A !", true); return; }
+          pairs.push({ left_idx: selLeftIdx, right_idx: r.origIdx });
+          ans.match_pairs = [...pairs]; selLeftIdx = -1; renderAll();
         };
         rightCol.appendChild(el);
       });
-      grid.appendChild(leftCol);
-      const arrow=document.createElement('div'); arrow.style.cssText='display:flex;align-items:center;justify-content:center;font-size:1.5rem;opacity:.4;padding-top:32px'; arrow.textContent='→';
-      grid.appendChild(arrow);
-      grid.appendChild(rightCol);
-      wrapper.appendChild(grid);
-    };
-    renderPairs();
-    container.appendChild(wrapper);
-  },
 
-  // ── Fill blanks ───────────────────────────────────────
+      const arrow = document.createElement('div');
+      arrow.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:1.8rem;opacity:.3;padding-top:32px';
+      arrow.textContent = '→';
+      grid.appendChild(leftCol); grid.appendChild(arrow); grid.appendChild(rightCol);
+      container.appendChild(grid);
+    };
+    renderAll();
+  },
   renderFill(container, q, ans) {
     const data = q.answers[0];
     if (!data) return;
     const blanks = data.blanks || [];
     if (!ans.fill_answers.length) ans.fill_answers = blanks.map(()=>'');
 
-    // Replace ___ with input fields
-    let sentence = App.esc(data.sentence || q.text || '');
-    let blankIdx = 0;
-    sentence = sentence.replace(/___/g, () => {
-      const i = blankIdx++;
-      const val = App.esc(ans.fill_answers[i]||'');
-      return `<input class="fill-blank" id="fill-blank-${i}" value="${val}" placeholder="___" style="width:${Math.max(60,(val.length||3)*12)}px" oninput="Exam._updateFill(${i},this.value)">`;
+    // Build sentence with inline inputs, respecting line breaks
+    const rawSentence = data.sentence || q.text || '';
+    const parts = rawSentence.split('___');
+
+    const sentDiv = document.createElement('div');
+    sentDiv.className = 'fill-sentence';
+    sentDiv.style.whiteSpace = 'pre-wrap';
+    sentDiv.style.lineHeight = '2.4';
+
+    parts.forEach((part, i) => {
+      if (part) sentDiv.appendChild(document.createTextNode(part));
+      if (i < parts.length - 1) {
+        const inp = document.createElement('input');
+        inp.className = 'fill-blank';
+        inp.id = `fill-blank-${i}`;
+        inp.placeholder = `mot ${i+1}`;
+        inp.value = ans.fill_answers[i] || '';
+        inp.style.width = Math.max(80, (ans.fill_answers[i]?.length || 5) * 11) + 'px';
+        inp.oninput = () => {
+          Exam._updateFill(i, inp.value);
+          inp.style.width = Math.max(80, inp.value.length * 11) + 'px';
+        };
+        sentDiv.appendChild(inp);
+      }
     });
-    const sentDiv = document.createElement('div'); sentDiv.className='fill-sentence';
-    sentDiv.innerHTML = sentence;
     container.appendChild(sentDiv);
 
-    // Word bank (shuffled)
+    // Word bank
     if (blanks.length) {
       const bankDiv = document.createElement('div'); bankDiv.className='fill-word-bank';
-      const bankLabel=document.createElement('div'); bankLabel.style.cssText='width:100%;font-size:.72rem;font-weight:700;letter-spacing:1px;opacity:.5;margin-bottom:4px';
-      bankLabel.textContent='BANQUE DE MOTS'; bankDiv.appendChild(bankLabel);
+      const bankLabel = document.createElement('div');
+      bankLabel.style.cssText = 'width:100%;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.5;margin-bottom:6px';
+      bankLabel.textContent = '📦 Banque de mots — cliquez pour insérer dans le prochain champ vide';
+      bankDiv.appendChild(bankLabel);
       [...blanks].sort(()=>Math.random()-.5).forEach(b => {
-        const chip=document.createElement('span'); chip.className='fill-word-chip';
-        chip.textContent=b.word;
-        chip.onclick=()=>{
+        const chip = document.createElement('span'); chip.className='fill-word-chip';
+        chip.textContent = b.word;
+        chip.onclick = () => {
           const emptyIdx = ans.fill_answers.findIndex(f=>!f);
-          if (emptyIdx<0) return;
+          if (emptyIdx < 0) { App.notify('Tous les champs sont remplis !', true); return; }
           Exam._updateFill(emptyIdx, b.word);
-          const inp=document.getElementById(`fill-blank-${emptyIdx}`);
-          if (inp) inp.value=b.word;
+          const inp = document.getElementById(`fill-blank-${emptyIdx}`);
+          if (inp) { inp.value = b.word; inp.style.width = Math.max(80, b.word.length * 11) + 'px'; }
         };
         bankDiv.appendChild(chip);
       });
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'btn btn-ghost btn-xs';
+      clearBtn.style.cssText = 'margin-top:8px;display:block';
+      clearBtn.textContent = '🔄 Effacer tout';
+      clearBtn.onclick = () => { ans.fill_answers = blanks.map(()=>''); Exam.renderQuestion(); };
+      bankDiv.appendChild(clearBtn);
       container.appendChild(bankDiv);
     }
   },
+
   _updateFill(idx, val) {
     if (!Exam.answers[Exam.currentQ].fill_answers) Exam.answers[Exam.currentQ].fill_answers=[];
     Exam.answers[Exam.currentQ].fill_answers[idx] = val;
