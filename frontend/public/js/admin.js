@@ -485,13 +485,35 @@ const QModal = {
       pairs.forEach((p,i)=>this._renderMatchPair(builder,p,i));
 
     } else if (type==='fill') {
-      c.innerHTML=`<label class="form-label">✏️ Phrase avec blancs (utilisez ___ pour chaque blanc)</label>
-        <textarea class="form-textarea" id="fill-sentence" placeholder="Ex: La capitale de la France est ___ et elle compte ___ habitants." rows="3">${App.esc((existing[0]?.sentence)||q?.text||'')}</textarea>
-        <div style="margin-top:8px"><label class="form-label">Mots à placer (dans l'ordre des ___)</label>
-        <div id="fill-blanks-list"></div>
-        <button class="btn btn-ghost btn-xs" onclick="QModal._addFillBlank()" style="margin-top:8px">+ Ajouter un mot</button></div>`;
-      const blanks=(existing[0]?.blanks)||[];
-      blanks.forEach((b,i)=>this._addFillBlank(b.word));
+      const existingSentence = existing[0]?.sentence || '';
+      const existingBlanks   = existing[0]?.blanks   || [];
+      c.innerHTML=`
+        <div style="background:rgba(82,183,136,.08);border:1px solid rgba(82,183,136,.2);border-radius:10px;padding:14px;margin-bottom:12px;font-size:.85rem;line-height:1.7">
+          <strong>📋 Comment créer une question "Compléter" :</strong><br>
+          1. Rédigez votre phrase en remplaçant chaque mot à deviner par <code style="background:rgba(255,255,255,.1);padding:1px 6px;border-radius:4px">___</code> (3 tirets bas)<br>
+          2. Ajoutez les mots corrects dans le même ordre que les blancs<br>
+          <em style="opacity:.7">Exemple : "La capitale de ___ est ___ et sa superficie est ___ km²"<br>→ Mots : France | Paris | 632</em>
+        </div>
+        <label class="form-label">📝 Phrase avec blancs (remplacez chaque mot à deviner par ___)</label>
+        <textarea class="form-textarea" id="fill-sentence" placeholder="Ex: La photosynthèse transforme la lumière en ___ grâce à la ___." rows="4" style="white-space:pre-wrap;line-height:1.7">${App.esc(existingSentence)}</textarea>
+        <div id="fill-preview-zone" style="margin-top:6px;font-size:.8rem;opacity:.5"></div>
+        <div style="margin-top:14px">
+          <label class="form-label">✅ Mots corrects (dans l'ordre des ___ dans la phrase)</label>
+          <div id="fill-blanks-list"></div>
+          <button class="btn btn-ghost btn-xs" onclick="QModal._addFillBlank()" style="margin-top:8px">+ Ajouter un mot</button>
+        </div>`;
+      // Pre-fill existing blanks
+      existingBlanks.forEach((b) => this._addFillBlank(b.word));
+      // Live preview of blank count
+      const ta = document.getElementById('fill-sentence');
+      const preview = document.getElementById('fill-preview-zone');
+      const updatePreview = () => {
+        const count = (ta.value.match(/___/g)||[]).length;
+        preview.textContent = count > 0 ? `✓ ${count} blanc(s) détecté(s) — ajoutez ${count} mot(s) correct(s) ci-dessous` : 'Aucun ___ détecté dans la phrase';
+        preview.style.color = count > 0 ? 'var(--exam-light)' : 'var(--red)';
+      };
+      ta.addEventListener('input', updatePreview);
+      updatePreview();
 
     } else if (type==='open') {
       c.innerHTML=`<label class="form-label">📝 Réponse libre — correction manuelle par le professeur</label>
@@ -541,11 +563,25 @@ const QModal = {
     const list=document.getElementById('fill-blanks-list');
     if (!list) return;
     const i=list.children.length;
-    const div=document.createElement('div'); div.style.cssText='display:flex;gap:8px;margin-bottom:6px';
-    div.innerHTML=`<span style="font-family:Bangers,cursive;color:var(--exam-light);min-width:24px;padding-top:8px">${i+1}.</span>
-      <input type="text" class="form-input fill-blank-word-${i}" placeholder="Mot ${i+1}" value="${App.esc(val)}" style="flex:1">
-      <button class="btn btn-ghost btn-xs" onclick="this.parentElement.remove()" style="margin-top:2px">✕</button>`;
+    const div=document.createElement('div'); div.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center';
+    div.innerHTML=`
+      <div style="font-family:Bangers,cursive;color:var(--exam-light);font-size:1.1rem;min-width:28px;text-align:center;background:rgba(82,183,136,.15);border-radius:6px;padding:6px 4px">
+        ${i+1}
+      </div>
+      <input type="text" class="form-input fill-blank-word-${i}" placeholder="Mot correct pour le blanc n°${i+1}" value="${App.esc(val)}" style="flex:1">
+      <button class="btn btn-ghost btn-xs" onclick="this.parentElement.remove();QModal._renumberBlanks()" style="flex-shrink:0">✕</button>`;
     list.appendChild(div);
+  },
+
+  _renumberBlanks() {
+    const list = document.getElementById('fill-blanks-list');
+    if (!list) return;
+    [...list.children].forEach((row, i) => {
+      const numEl = row.querySelector('div');
+      if (numEl) numEl.textContent = i+1;
+      const inp = row.querySelector('input');
+      if (inp) { inp.className = `form-input fill-blank-word-${i}`; inp.placeholder = `Mot correct pour le blanc n°${i+1}`; }
+    });
   },
 
   async save() {
@@ -585,7 +621,13 @@ const QModal = {
       });
     } else if (type==='fill') {
       const sentence=(document.getElementById('fill-sentence')?.value||'').trim();
-      const blankWords=[...document.querySelectorAll('[class^=fill-blank-word-]')].map(el=>el.value.trim()).filter(Boolean);
+      const blankCount=(sentence.match(/___/g)||[]).length;
+      // Collect words in order from the list
+      const list=document.getElementById('fill-blanks-list');
+      const blankWords=list?[...list.querySelectorAll('input[type=text]')].map(el=>el.value.trim()):[];
+      if (blankCount===0) return App.notify('Ajoutez au moins un ___ dans la phrase !', true);
+      if (blankWords.filter(Boolean).length===0) return App.notify('Ajoutez les mots corrects pour chaque blanc !', true);
+      if (blankWords.filter(Boolean).length !== blankCount) App.notify(`Attention : ${blankCount} blanc(s) dans la phrase mais ${blankWords.filter(Boolean).length} mot(s) défini(s).`, true);
       const blanks=blankWords.map((word,i)=>({word,position:i}));
       answers=[{sentence,blanks}];
     } else if (type==='open') {
