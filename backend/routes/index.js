@@ -5,7 +5,8 @@ const fs       = require('fs');
 const pool     = require('../db/pool');
 const upload   = require('../middleware/upload');
 const { requireAdmin } = require('../middleware/auth');
-const { sendExamReport, testConnection, getProfEmail } = require('../services/mailer');
+const { sendExamReport, testConnection } = require('../services/mailer');
+
 const router = express.Router();
 
 // ═══════════════════════════════════════════════════════
@@ -361,11 +362,15 @@ router.post('/exams/start', async (req, res) => {
     if (cfg.shuffle_questions) questions = questions.sort(()=>Math.random()-.5);
 
     // Optionally shuffle answers per question
+    // IMPORTANT: shuffling changes visual indices, so we track new correct_index
+    // by keeping is_correct flag on each answer object (source of truth)
     if (cfg.shuffle_answers) {
       questions = questions.map(q => {
         if (!['qcm','truefalse'].includes(q.q_type)) return q;
         const shuffled = [...q.answers].sort(()=>Math.random()-.5);
-        return {...q, answers: shuffled};
+        // Recalculate correct_index based on new position of is_correct answer
+        const newCorrectIdx = shuffled.findIndex(a => a.is_correct === true);
+        return { ...q, answers: shuffled, correct_index: newCorrectIdx >= 0 ? newCorrectIdx : q.correct_index };
       });
     }
 
@@ -376,12 +381,25 @@ router.post('/exams/start', async (req, res) => {
       [exam_config_id, student_name.trim(), student_email?.trim()||null,
        class_id||null, questions.reduce((s,q)=>s+parseFloat(q.max_score||1),0)]);
 
-    // Strip correct_index & feedback from client payload
+    // Store shuffled questions (with updated correct_index) in session for scoring
+    // We store them server-side so client never sees correct answers
+    const questionsForScoring = questions.map(q => ({
+      id: q.id, correct_index: q.correct_index, answers: q.answers,
+      max_score: q.max_score, partial_scoring: q.partial_scoring, q_type: q.q_type
+    }));
+
+    // Update session with shuffled question data for later scoring
+    await pool.query(
+      'UPDATE exam_sessions SET answers_json=$1 WHERE id=$2',
+      [JSON.stringify({ _questions_cache: questionsForScoring }), session.id]
+    );
+
+    // Strip correct_index & is_correct & score from client payload (security)
     const safe = questions.map(q => ({
       id:q.id, q_type:q.q_type, text:q.text, media_url:q.media_url,
       ans_type:q.ans_type, max_score:q.max_score, partial_scoring:q.partial_scoring,
       answers: q.answers.map(a => {
-        const {is_correct, score, ...rest} = a;
+        const { is_correct, score, feedback, ...rest } = a;
         return rest;
       }),
     }));
@@ -391,18 +409,44 @@ router.post('/exams/start', async (req, res) => {
 });
 
 router.post('/exams/:sid/submit', async (req, res) => {
-  const { answers } = req.body; // [{question_id, given_answer, answer_indices}]
+  const { answers } = req.body;
   try {
     const { rows:[session] } = await pool.query('SELECT * FROM exam_sessions WHERE id=$1',[req.params.sid]);
     if (!session) return res.status(404).json({ error: 'Session introuvable.' });
 
     const { rows:[cfg] } = await pool.query('SELECT * FROM exam_configs WHERE id=$1',[session.exam_config_id]);
 
+    // Retrieve cached shuffled questions from session (stored at exam start)
+    // This ensures scoring uses the SHUFFLED order the student actually saw
+    let cachedQuestions = null;
+    try {
+      const sessionData = session.answers_json;
+      if (sessionData && sessionData._questions_cache) {
+        cachedQuestions = sessionData._questions_cache;
+      }
+    } catch(_) {}
+
     let totalScore = 0;
     const scoredAnswers = [];
 
     for (const ans of answers) {
-      const { rows:[q] } = await pool.query('SELECT * FROM questions WHERE id=$1',[ans.question_id]);
+      // Use cached question (with correct shuffled order) if available, else fetch from DB
+      let q;
+      if (cachedQuestions) {
+        const cached = cachedQuestions.find(cq => String(cq.id) === String(ans.question_id));
+        if (cached) {
+          // Fetch full question from DB but override answers+correct_index with shuffled version
+          const { rows:[dbQ] } = await pool.query('SELECT * FROM questions WHERE id=$1',[ans.question_id]);
+          if (dbQ) {
+            q = { ...dbQ, answers: cached.answers, correct_index: cached.correct_index };
+          }
+        }
+      }
+      // Fallback: fetch directly from DB (unshuffled)
+      if (!q) {
+        const { rows:[dbQ] } = await pool.query('SELECT * FROM questions WHERE id=$1',[ans.question_id]);
+        q = dbQ;
+      }
       if (!q) continue;
 
       let earnedScore = 0;
@@ -415,7 +459,10 @@ router.post('/exams/:sid/submit', async (req, res) => {
           const idx = parseInt(ans.answer_index ?? -1);
           const chosen = q.answers[idx];
           if (chosen) {
-            earnedScore = q.partial_scoring ? parseFloat(chosen.score||0) : (chosen.is_correct ? parseFloat(q.max_score) : 0);
+            // Score by is_correct flag (reliable even after shuffle)
+            earnedScore = q.partial_scoring
+              ? parseFloat(chosen.score||0)
+              : (chosen.is_correct === true ? parseFloat(q.max_score) : 0);
             feedback = chosen.feedback || '';
             givenAnswer = chosen.text || '';
           }
@@ -491,22 +538,16 @@ router.post('/exams/:sid/submit', async (req, res) => {
       [Math.round(totalScore*100)/100, percentage, passed, JSON.stringify(scoredAnswers), req.params.sid]);
 
     // Send email to prof (async, don't block response)
-    // Send email to prof (async, don't block response)
-try {
-  const { rows:[updatedSession] } = await pool.query(`
-    SELECT es.*, cl.name AS class_name FROM exam_sessions es
-    LEFT JOIN classes cl ON cl.id=es.class_id WHERE es.id=$1`,[req.params.sid]);
-  updatedSession.answers_json = scoredAnswers;
-  const { rows: allQ } = await pool.query('SELECT id,text,max_score FROM questions WHERE id=ANY($1)',
-    [scoredAnswers.map(a=>a.question_id)]);
-  const { rows:[examCfg] } = await pool.query('SELECT name FROM exam_configs WHERE id=$1',[session.exam_config_id]);
-  console.log('📧 Tentative envoi email pour:', updatedSession.student_name);
-  console.log('📧 Prof email:', await getProfEmail());
-  await sendExamReport(updatedSession, examCfg?.name||'Examen', allQ);
-  console.log('📧 Email envoyé avec succès !');
-} catch(emailErr) {
-  console.error('📧 Erreur email:', emailErr.message);
-}
+    try {
+      const { rows:[updatedSession] } = await pool.query(`
+        SELECT es.*, cl.name AS class_name FROM exam_sessions es
+        LEFT JOIN classes cl ON cl.id=es.class_id WHERE es.id=$1`,[req.params.sid]);
+      updatedSession.answers_json = scoredAnswers;
+      const { rows: allQ } = await pool.query('SELECT id,text,max_score FROM questions WHERE id=ANY($1)',
+        [scoredAnswers.map(a=>a.question_id)]);
+      const { rows:[examCfg] } = await pool.query('SELECT name FROM exam_configs WHERE id=$1',[session.exam_config_id]);
+      sendExamReport(updatedSession, examCfg?.name||'Examen', allQ).catch(()=>{});
+    } catch(_) {}
 
     res.json({
       score: Math.round(totalScore*100)/100,
