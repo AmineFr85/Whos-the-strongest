@@ -35,7 +35,7 @@ const App = {
     const el = document.getElementById(elId);
     const labels = {qcm:'🔘 QCM',truefalse:'✅ Vrai/Faux',order:'🔢 Ordre',match:'🔗 Relier',fill:'✏️ Compléter',open:'📝 Libre'};
     let html = `<span class="q-type-badge badge-text">${labels[q.q_type]||'QCM'}</span>`;
-    if (q.text) html += `<div class="question-text-el">${App.esc(q.text)}</div>`;
+    if (q.text) html += `<div class="question-text-el">${App.esc(q.text).replace(/\n/g,'&#10;')}</div>`;
     if (q.media_url) {
       const src = q.media_url;
       const isV = /video|\.mp4|\.webm/i.test(src);
