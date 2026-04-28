@@ -197,8 +197,7 @@ body{font-family:'Nunito',sans-serif;background:var(--dark);color:var(--white);m
 .exam-q-number{font-family:'Bangers',cursive;font-size:1.2rem;color:var(--exam-light);letter-spacing:2px;}
 .exam-q-score{font-size:.85rem;opacity:.6;}
 .exam-q-type-badge{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(82,183,136,.2);color:var(--exam-light);}
-.exam-question-text{font-size:1.3rem;font-weight:800;line-height:1.5;margin-bottom:20px;color:var(--white);}
-.exam-nav{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:rgba(0,0,0,.3);border-top:1px solid rgba(255,255,255,.07);}
+.exam-question-text{font-size:1.3rem;font-weight:800;line-height:1.6;margin-bottom:20px;color:var(--white);white-space:pre-wrap;}.exam-nav{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:rgba(0,0,0,.3);border-top:1px solid rgba(255,255,255,.07);}
 .exam-q-dots{display:flex;gap:6px;flex-wrap:wrap;max-width:400px;}
 .exam-q-dot{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:transparent;cursor:pointer;transition:all .2s;font-size:.65rem;font-weight:700;color:rgba(255,255,255,.5);}
 .exam-q-dot.answered{background:var(--exam-light);border-color:var(--exam-light);color:var(--dark);}
