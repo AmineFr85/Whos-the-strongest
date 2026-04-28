@@ -92,8 +92,8 @@ const Exam = {
     document.getElementById('exam-q-type-badge').textContent = typeLabels[q.q_type]||'QCM';
 
     // Question text
-    document.getElementById('exam-question-text').textContent = q.text || '';
-
+document.getElementById('exam-question-text').textContent = q.text || '';
+document.getElementById('exam-question-text').style.whiteSpace = 'pre-wrap';
     // Media
     const mediaEl = document.getElementById('exam-q-media');
     if (q.media_url) {
